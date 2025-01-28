@@ -1,24 +1,38 @@
 package com.cos.jwt.config;
 
-import com.cos.jwt.filter.MyFilter1;
+import com.cos.jwt.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-@RequiredArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
-    private final CorsFilter corsFilter;
+    @Autowired
+    private CorsConfig corsConfig;
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        AuthenticationManager authenticationManager =  http.getSharedObject(AuthenticationManager.class);
+
+        // http.addFilterBefore(new MyFilter3(), SecurityContextHolderFilter.class);
+
         // csrf 비활성화
         http.csrf(AbstractHttpConfigurer::disable);
 
@@ -28,11 +42,14 @@ public class SecurityConfig {
         
         // 크로스 오리진 전부 허용
         // CrossOrigin 인증 x, 시큐리티 필터에 등록 인증 o
-        http.addFilter(corsFilter);
+        http.addFilter(corsConfig.corsFilter());
 
         // 폼 로그인 및 HTTP Basic 인증 비활성화
         http.formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
+
+        // JWT 필터 추가
+        http.addFilter(new JwtAuthenticationFilter(authenticationManager));
 
         // 요청 권한 설정
         http.authorizeHttpRequests(auth -> auth

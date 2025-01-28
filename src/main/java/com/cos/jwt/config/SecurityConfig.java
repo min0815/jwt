@@ -1,6 +1,7 @@
 package com.cos.jwt.config;
 
 import com.cos.jwt.jwt.JwtAuthenticationFilter;
+import com.cos.jwt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +13,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -27,9 +27,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        AuthenticationManager authenticationManager =  http.getSharedObject(AuthenticationManager.class);
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
 
         // http.addFilterBefore(new MyFilter3(), SecurityContextHolderFilter.class);
 
@@ -44,12 +42,12 @@ public class SecurityConfig {
         // CrossOrigin 인증 x, 시큐리티 필터에 등록 인증 o
         http.addFilter(corsConfig.corsFilter());
 
+        // JWT 필터 추가
+        http.addFilter(new JwtAuthenticationFilter(authenticationManager));
+
         // 폼 로그인 및 HTTP Basic 인증 비활성화
         http.formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
-
-        // JWT 필터 추가
-        http.addFilter(new JwtAuthenticationFilter(authenticationManager));
 
         // 요청 권한 설정
         http.authorizeHttpRequests(auth -> auth

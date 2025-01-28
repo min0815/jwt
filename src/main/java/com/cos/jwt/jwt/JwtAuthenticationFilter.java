@@ -31,40 +31,33 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         System.out.println("JwtAuthenticationFilter: 로그인 시도 중");
 
         // 1. username, password 받아서
+        ObjectMapper om = new ObjectMapper();
+        User user = null;
         try {
-//            BufferedReader br = request.getReader();
-//
-//            String input = null;
-//            while((input = br.readLine()) != null) {
-//                System.out.println(input);
-//            }
-
-            ObjectMapper om = new ObjectMapper();
-            User user = om.readValue(request.getInputStream(), User.class);
-            System.out.println(user);
-
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
-
-            // PrincipalDetailsService의 loadUserByUsername() 함수가 실행되고
-            // 정상이면 authentication이 리턴됨
-            Authentication authentication
-                    = authenticationManager.authenticate(authenticationToken);
-
-            // 실행되면 로그인이 되었다는 뜻
-            PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-            System.out.println(principalDetails.getUsername());
-            System.out.println("================================");
-
-            // authentication객체가 session 영역에 저장을 해야하고 그 방법이 return 해줌
-            // 리턴의 이유는 권한 관리를 security가 대신 해주기 때문에 편하려고 하는 거임
-            // 굳이 JWT 토큰을 사용하면서 세션을 만들 이유가 없음. 근데 단지 권한 처리 때문에 session 넣어 줌
-
-            return authentication;
-
+            user = om.readValue(request.getInputStream(), User.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        System.out.println(user);
+
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword());
+
+        // PrincipalDetailsService의 loadUserByUsername() 함수가 실행되고
+        // 정상이면 authentication이 리턴됨
+        Authentication authentication
+                = authenticationManager.authenticate(authenticationToken);
+
+        // 실행되면 로그인이 되었다는 뜻
+        PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+        System.out.println(principalDetails.getUsername());
+        System.out.println("================================");
+
+        // authentication객체가 session 영역에 저장을 해야하고 그 방법이 return 해줌
+        // 리턴의 이유는 권한 관리를 security가 대신 해주기 때문에 편하려고 하는 거임
+        // 굳이 JWT 토큰을 사용하면서 세션을 만들 이유가 없음. 근데 단지 권한 처리 때문에 session 넣어 줌
+
+        return authentication;
     }
 
     // attemptAuthentication 실행 후 인증이 정상적으로 되었으면 successfulAuthentication 함수 실행

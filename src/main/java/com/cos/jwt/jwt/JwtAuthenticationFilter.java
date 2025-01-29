@@ -1,5 +1,7 @@
 package com.cos.jwt.jwt;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.cos.jwt.auth.PrincipalDetails;
 import com.cos.jwt.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +17,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
+import java.util.Date;
 
 // 스프링 시큐리티에서 UsernamePasswordAuthenticationFilter가 있음
 // '/login'으로 요청해서 username, password 전송하면(post) 이 필터가 동작
@@ -65,6 +68,28 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         System.out.println("successfulAuthentication 실행됨: 인증이 완료됐다는 뜻임");
-        super.successfulAuthentication(request, response, chain, authResult);
+
+        // 이 정보로 토큰 생성
+        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
+
+        // RSA 방식은 아니구 Hash 암호 방식
+        String jwtToken = JWT.create()
+                .withSubject("cos토큰")
+                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 10)))
+                .withClaim("id", principalDetails.getUser().getId())
+                .withClaim("username", principalDetails.getUser().getUsername())
+                .sign(Algorithm.HMAC512("cos"));
+
+        response.addHeader("Authorization", "Bearer " + jwtToken);
+
+        // 아이디, 패스워드가 정상이어서 로그인이 된다면
+        // 서버에서 세션ID 생성, 클라이언트 쿠키 세션ID를 응답
+        // 요청할 때 마다 쿠키값 세션ID를 항상 들고 서버쪽으로 요청을 하기 때문에 서버는 세션ID가 유효한지 판단후
+        // session.getAttribute("세션값 확인"); 유효하면 인증 페이지 접근 허용
+
+        // 하지만 JWT 방식은 아이디, 패스워드가 정상이어서 로그인이 되면
+        // 세션ID도 만들지 않고 쿠키도 만들지 않음
+        // JWT 토큰을 생성해서 클라이언트 쪽으로 JWT 토큰을 응답,
+        // 클라이언트는 요청할 때 마다 JWT 토큰을 가지고 요청, 서버는 JWT 토큰이 유효한지를 판단(판단하는 필터 생성)
     }
 }

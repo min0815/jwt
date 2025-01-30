@@ -81,6 +81,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .sign(Algorithm.HMAC512("cos"));
 
         response.addHeader("Authorization", "Bearer " + jwtToken);
+        System.out.println(jwtToken);
 
         // 아이디, 패스워드가 정상이어서 로그인이 된다면
         // 서버에서 세션ID 생성, 클라이언트 쿠키 세션ID를 응답

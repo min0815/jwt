@@ -14,13 +14,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
     private final CorsConfig corsConfig;
     private final UserRepository userRepository;
 
@@ -46,8 +46,9 @@ public class SecurityConfig {
         http.addFilter(corsConfig.corsFilter());
 
         // JWT 필터 추가
-        http.addFilter(new JwtAuthenticationFilter(authenticationManager))
-                .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository));
+        http.addFilterAt(new JwtAuthenticationFilter(authenticationManager), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthorizationFilter(authenticationManager, userRepository), UsernamePasswordAuthenticationFilter.class);
+
 
         // 폼 로그인 및 HTTP Basic 인증 비활성화
         http.formLogin(AbstractHttpConfigurer::disable)
